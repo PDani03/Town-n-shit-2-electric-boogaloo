@@ -16,10 +16,11 @@ class Enemy(Entity):
             self.actuals[key] *= game_diff
     
     def applyPlayerWeapon(self, wpn):
-        match wpn.type:
-            case "club":
-                self.actuals["df"]=0
-                self.bases["df"]=0
+        if wpn:
+            match wpn.type:
+                case "club":
+                    self.actuals["df"]=0
+                    self.bases["df"]=0
 
 def makeEnemy(diff, boss=False):
 

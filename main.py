@@ -17,6 +17,7 @@ class GameState:
         self.upgrade_prices=[20,20,50,10]
         self.money = 10
         self.player = Character(1,0,100,4,1) #alap: acc 1, pot 0, hp 100, dmg 4, df 2
+        self.combat_qol=False
     
     def clampUpgradePrices(self):
         self.upgrade_prices = [round(price, 2) for price in self.upgrade_prices]
@@ -100,7 +101,8 @@ def info(area,choice=False,wpn_to_be_sold=False):
             print("2. Weapons")
             print("3. Stats") #actual stuff, num of potions, upgrade costs
             print("4. Adventure")
-            print("5. Quit\033[37m")
+            print("5. Settings")
+            print("6. Quit\033[37m")
 
         case "shop":
             print(f"\033[30;43mmoney: {State.money}\033[30;40m")
@@ -163,6 +165,12 @@ def info(area,choice=False,wpn_to_be_sold=False):
             print(f"1. Sell {wpn_to_be_sold.getWeaponString()} ({wpn_to_be_sold.sell_value})")
             print("2. Back\033[37m")
 
+        case "settings":
+            print(f"\033[30;43mmoney: {State.money}\033[30;40m")
+            print("\033[32m- - - - - - - Settings - - - - - - -")
+            print(f"1. Combat QoL ({'on' if State.combat_qol else 'off'})")
+            print("2. Back\033[37m")
+
     return area, wpn_to_be_sold
 print()
 
@@ -223,7 +231,7 @@ while run:
     
     if area=="adventure_start":
 
-        places= ["\033[32mplains\033[37m","\033[32mforest\033[37m","\033[30mcave\033[37m","\033[36mriverside\033[37m"]
+        places= ["\033[32mplains\033[37m","\033[32mforest\033[37m","\033[90mcave\033[37m","\033[36mriverside\033[37m"]
         place=random.choice(places)
         place_index=places.index(place)
         input(f"You walk into a {place}.")
@@ -248,7 +256,7 @@ while run:
         diff=0
         adventure=True
         
-        while adventure and diff<=50:
+        while adventure and diff<50:
             diff+=1
 
             enemies=[]
@@ -275,7 +283,7 @@ while run:
                     print(f"{enemies.index(i)+1}. {i.name if i !='Flee' else i}")
                 print("\033[37m",end="")
                 
-                targeted_enemy=enemies[mely()-1]
+                targeted_enemy=enemies[mely(len(enemies))-1]
                 
                 if targeted_enemy=="Flee":
                     adventure=False
@@ -288,6 +296,7 @@ while run:
                     targeted_enemy.fullHeal()
                     targeted_enemy.applyGameDiff(State.game_diff)
                     targeted_enemy.applyPlayerWeapon(State.player.getEquippedWeapon())
+                    persistent_choice=0
 
                     while targeted_enemy.current_hp>0: #fight
                         targeted_enemy.clampActuals()
@@ -297,14 +306,17 @@ while run:
                         print(f"\033[31m- - - - - - - {targeted_enemy.name} (health: {targeted_enemy.current_hp}) - - - - - - -")
                         print("1. Attack")
                         print("2. Defend")
-                        print(f"3. drink potion ({State.player.actuals['pot']} remaining)\033[37m")
+                        print(f"3. drink potion ({State.player.actuals['pot']} remaining)")
+                        print("4. Auto focus\033[37m")
 
-                        atk_choice=mely(3)
+                        atk_choice=persistent_choice
+                        if persistent_choice==0:
+                            atk_choice=mely(4)
                         
                         out_of_potions=State.player.actuals["pot"]==0
-                        if out_of_potions and atk_choice==3:
+                        while out_of_potions and atk_choice==3:
                             print("You are out of potions.")
-                            atk_choice=mely(2,"You are out of potions.")
+                            atk_choice=mely(4,"You are out of potions.")
 
                         State.player.is_guarding=False
                         print("\033[33m",end="")
@@ -315,7 +327,13 @@ while run:
                             case 2:
                                 print(f"You brace yourself for impact, negating some damage, and letting you focus!")
                                 State.player.is_guarding=True
-                                if State.player.actuals["acc"]+0.03 <= State.player.bases["acc"]*2:
+                                try:
+                                    max_focus = State.player.bases["acc"] * State.player.getEquippedWeapon().value * (State.player.getEquippedWeapon().type=="bow") * 2
+                                except:
+                                    max_focus = State.player.bases["acc"]*2 #if the player doesnt have a weapon equipped
+                                max_focus = max(State.player.bases["acc"]*2, max_focus)
+
+                                if State.player.actuals["acc"]+0.03 <= max_focus:
 
                                     focus_gained=0.03
                                     match place_index:
@@ -325,7 +343,8 @@ while run:
                                     State.player.actuals["acc"]+=focus_gained
                                 else:
                                     print("Max focus reached!")
-                                    State.player.actuals["acc"] = State.player.bases["acc"]*2
+                                    State.player.actuals["acc"] = max_focus
+                                    persistent_choice=0
                                 State.player.actuals["acc"]+=0.02
 
                             case 3:
@@ -333,7 +352,10 @@ while run:
                                 print(f"You drink a potion, restoring {restored_hp} health!")
                                 State.player.current_hp+=restored_hp
                                 State.player.actuals["pot"]-=1
-                        
+
+                            case 4:
+                                persistent_choice=2
+
                         if targeted_enemy.current_hp>0:
                             print(f"The {targeted_enemy.name} swings at you, dealing {State.player.takeDamage(targeted_enemy.calcDamageOut())}!")
                             if State.player.current_hp<=0:
@@ -342,7 +364,12 @@ while run:
                                 run=False
                                 break
 
-                            print("you lose some focus.")
+                            txt="you lose some focus."
+                            if State.combat_qol or persistent_choice==2:
+                                print(txt)
+                            else:
+                                input(txt)
+
                             loss = 0.02
                             match State.player.equipped_wpn:
                                 case "bow":
@@ -362,7 +389,13 @@ while run:
                         print("\033[37m",end="")
 
                     if run: #checking if the player died
-                        input("\033[36mEnemy defeated!")
+
+                        txt="\033[36mEnemy defeated!"
+                        if State.combat_qol:
+                            print(txt)
+                        else:
+                            input(txt)
+
                         weapons=makeWeapons(diff + (place_index==1)*5, targeted_enemy)
                         enemies.pop(enemies.index(targeted_enemy))
 
@@ -376,7 +409,7 @@ while run:
                             State.player.weapons.append(i)
                         print("\033[37m",end="")
                         
-                        if weapons:
+                        if weapons and not State.combat_qol:
                             input()
                     else:
                         break
@@ -385,7 +418,7 @@ while run:
             print()
             input("Damn, you reached the last floor!\nHere, have a reward:")
 
-            reward_enemy=Enemy(100, 15, 10, name="reward chest", loot=["sword","shield","dagger","bow","potion"], weapon_amount_max=1, diff=1)
+            reward_enemy=Enemy(100, 15, 10, name="reward chest", loot=["sword","shield","dagger","bow","potion", "club"], weapon_amount_max=1, diff=1)
             weapons=makeWeapons(200,reward_enemy,True)
 
             for i in weapons:

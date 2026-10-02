@@ -12,6 +12,8 @@ def choiceToArea(State, area, choice, wpn_to_be_sold):
                 case 4:
                     return "adventure_start"
                 case 5:
+                    return "settings"
+                case 6:
                     return "quit"
         
         case "shop":
@@ -74,5 +76,12 @@ def choiceToArea(State, area, choice, wpn_to_be_sold):
         
         case "char_stats":
             return "home"
+
+        case "settings":
+            match choice:
+                case 1:
+                    State.combat_qol = not State.combat_qol
+                case 2:
+                    return "home"
 
     return area

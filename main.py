@@ -3,6 +3,12 @@ from classes.character import Character
 from classes.weapon import Weapon, makeWeapons
 from classes.enemy import Enemy, makeEnemy
 from classes.choicetoarea import choiceToArea
+try:
+    from colorama import just_fix_windows_console
+    just_fix_windows_console()
+except ImportError:
+    import os
+    os.system("")
 
 class GameState:
     def __init__(self):
@@ -185,6 +191,9 @@ if State.name=="":
 
 welcome_message=f"Welcome, {State.name}!"
 match State.name.lower():
+    case "test":
+        welcome_message="Currently in testing mode."
+        State.money=max(99999, State.money)
     case "oroszi":
         welcome_message="Szopd ki a gecim"
     case "anyad" | "kurvaanyad" | "kurva anyad":

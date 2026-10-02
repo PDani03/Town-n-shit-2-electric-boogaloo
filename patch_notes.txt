@@ -1,0 +1,27 @@
+Patch 1.2:
+
+    big changes:
+        added new weapon type - hammer:
+            provides value*0.7 damage, negates enemy defense
+
+Patch 1.1:
+
+    big changes:
+        added color
+        added new weapon type - dagger:
+            provides value*1.2 damage, but also *0.8 defense (so if you have it equipped you do more damage but have less defense)
+            you lose more focus with it equipped (0.02 -> 0.03)
+
+    small changes:
+        changed enemy floor scaling (less scaling on hp, more on dmg and df)
+        listWeapons() now orders weapons according to type, then value
+        selling a weapon now puts you back at sell weapons area instead of shop
+        focus is now kept between 0 and 2 * base accuracy
+        you now gain less focus when guarding (0.045 -> 0.03)
+        you now lose less focus if a bow is equipped (0.02 -> 0.01)
+        added extra usefulness to the place you go into
+        increased money gained from selling weapons
+
+    fixes:
+        fixed lower difficulties making prices scale down
+        fixed potions not running out

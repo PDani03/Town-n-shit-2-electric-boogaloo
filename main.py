@@ -157,13 +157,19 @@ def info(area,choice=False,wpn_to_be_sold=False):
         case "sell_wpn":
             print("\033[33m- - - - - - - Sell a weapon - - - - - - -")
             State.player.listWeapons()
-            print(f"{len(State.player.weapons)+1}. Back\033[37m")
+            print(f"{len(State.player.weapons)+1}. Smart sell")
+            print(f"{len(State.player.weapons)+2}. Back\033[37m")
         
         case "q_sell_wpn": # question sell wpn: "are you sure?"
             wpn_to_be_sold=State.player.weapons[choice-1]
             print("\033[33m- - - - - - - Are you sure? - - - - - - -")
             print(f"1. Sell {wpn_to_be_sold.getWeaponString()} ({wpn_to_be_sold.sell_value})")
             print("2. Back\033[37m")
+
+        case "q_smart_sell":
+                print("\033[33m- - - - - - - Are you sure? - - - - - - -")
+                print(f"1. Sell all same type and lower value weapons than equipped weapon: {State.player.equipped_wpn.getWeaponString() if State.player.equipped_wpn else 'None'}")
+                print("2. Back\033[37m")
 
         case "settings":
             print(f"\033[30;43mmoney: {State.money}\033[30;40m")
@@ -201,6 +207,7 @@ welcome_message=f"Welcome, {State.name}!"
 match State.name.lower():
     case "test":
         welcome_message="Currently in testing mode."
+        #State.player.weapons=makeWeapons(30,Enemy(100, 15, 10, name="Varga Gyula", loot=["club"], weapon_amount_max=30),True)
         State.money=max(99999, State.money)
     case "oroszi":
         welcome_message="Szopd ki a gecim"

@@ -56,6 +56,8 @@ def choiceToArea(State, area, choice, wpn_to_be_sold):
         case "sell_wpn":
             if choice<=len(State.player.weapons):
                 return "q_sell_wpn"
+            elif choice==len(State.player.weapons)+1:
+                return "q_smart_sell"
             return "shop"
         
         case "q_sell_wpn":
@@ -63,6 +65,19 @@ def choiceToArea(State, area, choice, wpn_to_be_sold):
                 return "sell_wpn"
             State.money+=wpn_to_be_sold.sell_value
             State.player.weapons.pop(State.player.weapons.index(wpn_to_be_sold))
+            State.player.equipped_wpn=State.player.getEquippedWeapon() #just to make sure that equipped_wpn gets updated if that was the sold weapon
+            return "sell_wpn"
+
+        case "q_smart_sell":
+            if choice==2:
+                return "sell_wpn"
+            if not State.player.equipped_wpn:
+                input("No weapon equipped.")
+                return "sell_wpn"
+            
+            for i in State.player.weapons.copy():
+                if i.type == State.player.equipped_wpn.type and i.value < State.player.equipped_wpn.value:
+                    State.money+=State.player.weapons.pop(State.player.weapons.index(i)).sell_value
             return "sell_wpn"
 
         case "char_weapons":
@@ -70,7 +85,8 @@ def choiceToArea(State, area, choice, wpn_to_be_sold):
                 for i in State.player.weapons:
                     i.equipped=False
                 State.player.weapons[choice-1].equipped=True
-                print(State.player.getEquippedWeapon().getWeaponString()+" equipped!")
+                State.player.equipped_wpn=State.player.getEquippedWeapon()
+                print(State.player.equipped_wpn.getWeaponString()+" equipped!")
                 State.player.calcDamageOut()
             return "home"
         
